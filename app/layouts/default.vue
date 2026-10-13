@@ -8,11 +8,14 @@
     >
       <v-app-bar-nav-icon
         class="menu-toggle"
-        @click="drawer = !drawer"
+        @click="toggleDrawer"
       />
       <v-app-bar-title class="app-title">
-        <span class="title-accent">NEO</span> BOOKS
+        <NuxtLink to="/" class="app-title-link">
+          <span class="title-accent">NEO</span> BOOKS
+        </NuxtLink>
       </v-app-bar-title>
+
       <v-spacer />
       <v-btn
         icon="mdi-magnify"
@@ -63,6 +66,13 @@
           />
           <v-divider v-if="currentUser" class="my-1 dropdown-divider" />
           <v-list-item
+            prepend-icon="mdi-account-circle-outline"
+            title="Mi perfil"
+            class="profile-dropdown-item"
+            to="/profile"
+          />
+          <v-divider class="my-1 dropdown-divider" />
+          <v-list-item
             prepend-icon="mdi-logout"
             title="Cerrar sesión"
             class="logout-dropdown-item"
@@ -77,6 +87,7 @@
       v-model="drawer"
       class="drawer-glass"
       :rail="rail"
+      :rail-width="64"
       :permanent="lgAndUp"
       :temporary="!lgAndUp"
       @mouseenter="rail = false"
@@ -99,13 +110,116 @@
       <v-divider class="divider-glow" />
 
       <!-- Navigation Items -->
-      <v-list nav density="comfortable" class="nav-list">
+      <v-list nav density="comfortable" class="nav-list" v-model:opened="openedGroups">
         <v-list-item
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="item.title"
+          to="/"
+          prepend-icon="mdi-home-variant"
+          title="Inicio"
+          rounded="lg"
+          class="nav-item"
+          active-class="nav-item--active"
+          exact
+        />
+
+        <!-- Categories List Group -->
+        <v-list-group value="categories">
+          <template #activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi-shape-outline"
+              title="Categorías"
+              rounded="lg"
+              class="nav-item nav-item--categories-activator"
+              :class="{ 'nav-item--active': isCategoriesActive }"
+            >
+              <template #append v-if="!rail">
+                <v-chip size="x-small" color="cyan" variant="tonal" class="cat-drawer-chip">
+                  {{ categories.length }}
+                </v-chip>
+              </template>
+            </v-list-item>
+          </template>
+
+          <v-list-item
+            to="/categories"
+            prepend-icon="mdi-view-grid-outline"
+            title="Ver todas"
+            rounded="lg"
+            class="nav-sub-item nav-sub-item--all"
+            exact
+            active-class="nav-sub-item--active"
+          />
+
+          <v-list-item
+            v-for="cat in categories"
+            :key="cat.slug"
+            :to="`/categories?cat=${cat.slug}`"
+            :prepend-icon="cat.icon"
+            :title="cat.shortTitle || cat.title"
+            rounded="lg"
+            class="nav-sub-item"
+            :class="{ 'nav-sub-item--active': isCatActive(cat.slug) }"
+          >
+            <template #append v-if="!rail">
+              <span class="cat-drawer-dot" :style="{ background: cat.color }"></span>
+            </template>
+          </v-list-item>
+        </v-list-group>
+
+        <v-list-item
+          to="/features"
+          prepend-icon="mdi-star-four-points"
+          title="Características"
+          rounded="lg"
+          class="nav-item"
+          active-class="nav-item--active"
+          exact
+        />
+
+        <v-list-item
+          to="/reviews"
+          prepend-icon="mdi-book-open-page-variant"
+          title="Publicaciones"
+          rounded="lg"
+          class="nav-item"
+          active-class="nav-item--active"
+          exact
+        />
+
+        <v-list-item
+          to="/library"
+          prepend-icon="mdi-library-shelves"
+          title="Biblioteca"
+          rounded="lg"
+          class="nav-item"
+          active-class="nav-item--active"
+          exact
+        />
+
+        <v-list-item
+          to="/testimonials"
+          prepend-icon="mdi-message-text-outline"
+          title="Testimonios"
+          rounded="lg"
+          class="nav-item"
+          active-class="nav-item--active"
+          exact
+        />
+
+        <v-list-item
+          to="/contact"
+          prepend-icon="mdi-email-outline"
+          title="Contacto"
+          rounded="lg"
+          class="nav-item"
+          active-class="nav-item--active"
+          exact
+        />
+
+        <v-list-item
+          to="/profile"
+          prepend-icon="mdi-account-circle-outline"
+          title="Mi Perfil"
           rounded="lg"
           class="nav-item"
           active-class="nav-item--active"
@@ -146,25 +260,37 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useRouter, useRoute } from 'vue-router'
+import { useCategories } from '~/composables/useCategories'
 
 const { lgAndUp } = useDisplay()
 const drawer = ref(true)
 const rail = ref(true)
+const openedGroups = ref(['categories'])
 
 const { currentUser, logout } = useAuth()
 const router = useRouter()
+const route = useRoute()
+const { categories } = useCategories()
+
+const isCategoriesActive = computed(() => route.path.startsWith('/categories'))
+
+function isCatActive(slug) {
+  return route.path === '/categories' && route.query.cat === slug
+}
+
+function toggleDrawer() {
+  if (lgAndUp.value) {
+    rail.value = !rail.value
+  } else {
+    drawer.value = !drawer.value
+  }
+}
 
 function handleLogout() {
   logout()
   router.push('/login')
 }
-
-const navItems = [
-  { title: 'Inicio', icon: 'mdi-home-variant', to: '/' },
-  { title: 'Características', icon: 'mdi-star-four-points', to: '/features' },
-  { title: 'Testimonios', icon: 'mdi-message-text-outline', to: '/testimonials' },
-  { title: 'Contacto', icon: 'mdi-email-outline', to: '/contact' },
-]
 </script>
 
 <style>
@@ -193,6 +319,26 @@ body {
 
 .app-shell {
   background: var(--bg-deep) !important;
+}
+
+/* Modern Dark Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 10, 20, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.5);
 }
 </style>
 
@@ -254,6 +400,82 @@ body {
   background: var(--glass-bg) !important;
   backdrop-filter: blur(24px) saturate(1.4);
   border-right: 1px solid var(--glass-border) !important;
+}
+
+/* Custom sleek scrollbar for expanded drawer */
+.drawer-glass :deep(.v-navigation-drawer__content) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.25) transparent;
+  overflow-x: hidden !important;
+}
+
+.drawer-glass :deep(.v-navigation-drawer__content::-webkit-scrollbar) {
+  width: 4px;
+}
+
+.drawer-glass :deep(.v-navigation-drawer__content::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+.drawer-glass :deep(.v-navigation-drawer__content::-webkit-scrollbar-thumb) {
+  background: rgba(6, 182, 212, 0.25);
+  border-radius: 4px;
+}
+
+/* Rail mode: Hide scrollbar completely and center elements */
+:deep(.v-navigation-drawer--rail .v-navigation-drawer__content) {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+}
+
+:deep(.v-navigation-drawer--rail .v-navigation-drawer__content::-webkit-scrollbar) {
+  display: none !important;
+  width: 0 !important;
+}
+
+/* In rail mode, hide sub-group items and chevron arrows */
+:deep(.v-navigation-drawer--rail .v-list-group__items) {
+  display: none !important;
+}
+
+:deep(.v-navigation-drawer--rail .v-list-group__header .v-list-item__append),
+:deep(.v-navigation-drawer--rail .v-list-item__append),
+:deep(.v-navigation-drawer--rail .v-list-item__spacer) {
+  display: none !important;
+}
+
+/* Center icons and active states nicely in rail mode */
+:deep(.v-navigation-drawer--rail .nav-list) {
+  padding: 8px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+:deep(.v-navigation-drawer--rail .nav-item) {
+  width: 46px !important;
+  min-width: 46px !important;
+  height: 44px !important;
+  margin: 0 auto 6px auto !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 12px !important;
+}
+
+:deep(.v-navigation-drawer--rail .nav-item .v-list-item__prepend) {
+  margin-inline-end: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+:deep(.v-navigation-drawer--rail .nav-item .v-list-item__content) {
+  display: none !important;
 }
 
 .drawer-brand {
@@ -327,6 +549,54 @@ body {
   color: var(--accent-cyan) !important;
 }
 
+.app-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.cat-drawer-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.cat-drawer-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+  display: inline-block;
+}
+
+.nav-sub-item {
+  padding-left: 28px !important;
+  color: #94a3b8 !important;
+  font-size: 0.82rem !important;
+  margin-bottom: 2px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease;
+}
+
+.nav-sub-item:hover {
+  color: #f1f5f9 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  transform: translateX(2px);
+}
+
+.nav-sub-item--active {
+  color: var(--accent-cyan) !important;
+  background: rgba(6, 182, 212, 0.1) !important;
+  font-weight: 600 !important;
+}
+
+.nav-sub-item--active :deep(.v-icon) {
+  color: var(--accent-cyan) !important;
+}
+
+.nav-sub-item--all {
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px !important;
+}
+
 /* Footer */
 .drawer-footer {
   padding: 12px 16px;
@@ -386,6 +656,18 @@ body {
 .logout-dropdown-item:hover {
   background: rgba(239, 68, 68, 0.12) !important;
 }
+
+.profile-dropdown-item {
+  color: #94a3b8 !important;
+  border-radius: 8px !important;
+  transition: background 0.2s;
+}
+
+.profile-dropdown-item:hover {
+  background: rgba(6, 182, 212, 0.08) !important;
+  color: #22d3ee !important;
+}
+
 
 .nav-item--logout:hover {
   color: #f87171 !important;
